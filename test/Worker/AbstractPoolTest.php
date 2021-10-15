@@ -8,8 +8,8 @@ use Amp\Parallel\Worker\Pool;
 use Amp\Parallel\Worker\Task;
 use Amp\Parallel\Worker\Worker;
 use Amp\PHPUnit\AsyncTestCase;
-use Revolt\EventLoop\Loop;
-use function Amp\Future\spawn;
+use Revolt\EventLoop;
+use function Amp\coroutine;
 
 abstract class AbstractPoolTest extends AsyncTestCase
 {
@@ -86,9 +86,9 @@ abstract class AbstractPoolTest extends AsyncTestCase
         $pool = $this->createPool();
 
         $values = Future\all([
-            spawn(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
-            spawn(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
-            spawn(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
+            coroutine(fn () => $pool->enqueue(new Fixtures\TestTask(42))),
+            coroutine(fn () => $pool->enqueue(new Fixtures\TestTask(56))),
+            coroutine(fn () => $pool->enqueue(new Fixtures\TestTask(72))),
         ]);
 
         self::assertEquals([42, 56, 72], $values);
@@ -134,13 +134,13 @@ abstract class AbstractPoolTest extends AsyncTestCase
         }, $values);
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return spawn(fn () => $pool->enqueue($task));
+            return coroutine(fn () => $pool->enqueue($task));
         }, $tasks);
 
         self::assertSame($values, Future\all($promises));
 
         $promises = \array_map(function (Task $task) use ($pool): Future {
-            return spawn(fn () => $pool->enqueue($task));
+            return coroutine(fn () => $pool->enqueue($task));
         }, $tasks);
 
         self::assertSame($values, Future\all($promises));
@@ -168,7 +168,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
             }, $values);
 
             $promises = \array_map(function (Task $task) use ($pool): Future {
-                return spawn(fn () => $pool->enqueue($task));
+                return coroutine(fn () => $pool->enqueue($task));
             }, $tasks);
 
             self::assertSame($values, Future\all($promises));
@@ -177,7 +177,7 @@ abstract class AbstractPoolTest extends AsyncTestCase
 
     public function testPooledKill()
     {
-        Loop::setErrorHandler(function (\Throwable $exception): void {
+        EventLoop::setErrorHandler(function (\Throwable $exception): void {
             $this->assertStringContainsString("Worker in pool crashed", $exception->getMessage());
         });
 

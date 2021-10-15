@@ -14,7 +14,7 @@ $urls = [
 
 $futures = [];
 foreach ($urls as $url) {
-    $futures[$url] = Future\spawn(fn () => Worker\enqueueCallable('file_get_contents', $url));
+    $futures[$url] = Future\coroutine(fn () => Worker\enqueueCallable('file_get_contents', $url));
 }
 
 $responses = Future\all($futures);
